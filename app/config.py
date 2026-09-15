@@ -1,16 +1,4 @@
-"""
-Athena v1.0
---------------------
-Application Configuration
-
-Responsibilities
-----------------
-1. Load environment variables (.env) once, at process start.
-2. Expose a single validated, immutable config object for the whole app.
-3. Let deployment-specific values (ports, thresholds, secrets) be overridden
-   without touching code — everything structural/schema-related stays in
-   core/constants.py; everything environment-specific lives here.
-"""
+"""Athena application configuration."""
 
 from __future__ import annotations
 
@@ -21,7 +9,7 @@ from functools import lru_cache
 
 from dotenv import load_dotenv
 
-from core.constants import (
+from app.core.constants import (
     PROJECT_ROOT,
     DEFAULT_THRESHOLD,
     RANDOM_STATE,
@@ -31,10 +19,6 @@ from core.constants import (
     ENCODER_PATH,
 )
 
-# Load .env once at import time. `override=False` means real environment
-# variables (e.g. set by the deployment platform) always win over the
-# .env file — .env is a local-dev convenience, not a source of truth in
-# production.
 load_dotenv(PROJECT_ROOT / ".env", override=False)
 
 
@@ -84,29 +68,17 @@ def _get_bool(key: str, default: bool) -> bool:
 
 @dataclass(frozen=True)
 class AppConfig:
-    # --- Environment ---
     environment: Environment
     debug: bool
-
-    # --- API server ---
     api_host: str
     api_port: int
-
-    # --- Logging ---
     log_level: str
     log_file_path: str
-
-    # --- ML ---
     random_state: int
     model_threshold: float
     model_path: str
     scaler_path: str
     encoder_path: str
-
-    # --- Security / compliance ---
-    # Salt for the SHA-256 pseudonymization applied to nameOrig/nameDest.
-    # Never defaulted to a fixed string — a hardcoded salt defeats the
-    # point of salting. Must come from the environment/secrets manager.
     pseudonymization_salt: str = field(repr=False)
 
     def __post_init__(self) -> None:
@@ -120,17 +92,7 @@ class AppConfig:
 
 @lru_cache(maxsize=1)
 def get_config() -> AppConfig:
-    """
-    Build (once) and return the process-wide config.
-
-    Cached with `lru_cache` rather than a bare module-level global so
-    that (a) construction — including validation in `__post_init__` — is
-    lazy, not paid at import time, and (b) tests can call
-    `get_config.cache_clear()` to rebuild against a patched environment
-    instead of reloading the module.
-    """
     environment = Environment(_get_str("ATHENA_ENV", default="dev").lower())
-
     return AppConfig(
         environment=environment,
         debug=_get_bool("ATHENA_DEBUG", default=environment != Environment.PROD),
