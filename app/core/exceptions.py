@@ -59,18 +59,16 @@ class InvalidDataTypeError(DataValidationError):
     """Raised when a column has an unexpected datatype."""
     pass
 
+
 class SchemaValidationError(DataValidationError):
-    """
-    Backward-compatible alias for schema validation failures.
-    """
+    """Backward-compatible exception for schema validation failures."""
     pass
 
 
 class DataIntegrityError(DataError):
-    """
-    Raised when data integrity checks fail.
-    """
+    """Raised when data integrity checks fail."""
     pass
+
 
 class EmptyDatasetError(DataError):
     """Raised when the dataset is empty."""
@@ -101,6 +99,16 @@ class ModelError(AthenaError):
     pass
 
 
+class ModelFactoryError(ModelError, ValueError):
+    """Raised when a model cannot be resolved or built by ModelFactory.
+
+    Inheriting from ValueError preserves the previous public behaviour
+    while providing one canonical Athena exception class for all factory
+    and model-builder validation failures.
+    """
+    pass
+
+
 class ModelTrainingError(ModelError):
     """Raised when model training fails."""
     pass
@@ -126,23 +134,6 @@ class EvaluationError(ModelError):
     pass
 
 
-class ModelFactoryError(ModelError):
-    """
-    Raised when an unsupported model is requested, or a model cannot be
-    built from the given arguments.
-
-    Canonical location for this exception. Model-builder modules
-    (random_forest.py, xgboost_model.py, lightgbm_model.py) and
-    ModelFactory itself all import it from here — previously each
-    defined/imported it independently, which meant a builder's
-    ModelFactoryError and ModelFactory's own ModelFactoryError were
-    different class objects with the same name, so a builder's
-    validation error would silently fail to be caught by a caller
-    expecting ModelFactory's exception type.
-    """
-    pass
-
-
 # ---------------------------------------------------------------------
 # Explainability
 # ---------------------------------------------------------------------
@@ -152,13 +143,11 @@ class ExplainabilityError(AthenaError):
     pass
 
 
-class SHAPExplainerError(ExplainabilityError):
-    """
-    Raised when SHAP explanations cannot be generated.
+class SHAPExplainerError(ExplainabilityError, RuntimeError):
+    """Raised when SHAP explanations cannot be generated.
 
-    Canonical location for this exception, imported by
-    ml/explainability/shap_explainer.py rather than defined locally
-    there, for the same reason as ModelFactoryError above.
+    Inheriting from RuntimeError preserves the previous public behaviour
+    while providing one canonical Athena exception class.
     """
     pass
 
@@ -200,4 +189,3 @@ def raise_if(condition: bool, exception_cls, message: str):
     """
     if condition:
         raise exception_cls(message)
-    

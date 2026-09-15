@@ -20,7 +20,7 @@ from typing import Iterable, Union
 import numpy as np
 import pandas as pd
 
-from core.constants import (
+from app.core.constants import (
     REQUIRED_COLUMNS,
     NUMERIC_COLUMNS,
     CATEGORICAL_COLUMNS,
@@ -28,7 +28,7 @@ from core.constants import (
     VALID_TRANSACTION_TYPES,
     EXPECTED_TARGET_VALUES,
 )
-from core.exceptions import (
+from app.core.exceptions import (
     DataValidationError,
     MissingColumnError,
     InvalidDataTypeError,
