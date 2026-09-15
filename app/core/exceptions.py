@@ -59,18 +59,16 @@ class InvalidDataTypeError(DataValidationError):
     """Raised when a column has an unexpected datatype."""
     pass
 
+
 class SchemaValidationError(DataValidationError):
-    """
-    Backward-compatible alias for schema validation failures.
-    """
+    """Backward-compatible exception for schema validation failures."""
     pass
 
 
 class DataIntegrityError(DataError):
-    """
-    Raised when data integrity checks fail.
-    """
+    """Raised when data integrity checks fail."""
     pass
+
 
 class EmptyDatasetError(DataError):
     """Raised when the dataset is empty."""
@@ -98,6 +96,16 @@ class DataSplitError(DataError):
 
 class ModelError(AthenaError):
     """Base class for model-related exceptions."""
+    pass
+
+
+class ModelFactoryError(ModelError, ValueError):
+    """Raised when a model cannot be resolved or built by ModelFactory.
+
+    Inheriting from ValueError preserves the previous public behaviour
+    while providing one canonical Athena exception class for all factory
+    and model-builder validation failures.
+    """
     pass
 
 
@@ -132,6 +140,15 @@ class EvaluationError(ModelError):
 
 class ExplainabilityError(AthenaError):
     """Raised when SHAP/XAI computation fails."""
+    pass
+
+
+class SHAPExplainerError(ExplainabilityError, RuntimeError):
+    """Raised when SHAP explanations cannot be generated.
+
+    Inheriting from RuntimeError preserves the previous public behaviour
+    while providing one canonical Athena exception class.
+    """
     pass
 
 
@@ -172,4 +189,3 @@ def raise_if(condition: bool, exception_cls, message: str):
     """
     if condition:
         raise exception_cls(message)
-    
