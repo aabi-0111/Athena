@@ -16,34 +16,14 @@ from typing import Any, Final
 
 from sklearn.ensemble import RandomForestClassifier
 
-try:
-    from core.exceptions import ModelFactoryError
-except ImportError:
-    try:
-        from app.core.exceptions import ModelFactoryError
-    except ImportError:
-        class ModelFactoryError(ValueError):
-            """Fallback if core.exceptions is unavailable (standalone use)."""
+from app.core.exceptions import ModelFactoryError
 
 __all__ = ["build_random_forest"]
 
 _VALID_CRITERIA: Final[frozenset[str]] = frozenset({"gini", "entropy", "log_loss"})
 
 
-def _validate_int_or_unit_float(
-    name: str,
-    value: int | float | None,
-    *,
-    int_minimum: int = 1,
-) -> None:
-    """
-    Validate a hyperparameter that sklearn accepts as either:
-      - an int >= int_minimum, or
-      - a float in (0.0, 1.0]
-
-    Covers min_samples_split, min_samples_leaf, max_features (numeric case).
-    Rejects bool explicitly since bool is a subclass of int in Python.
-    """
+def _validate_int_or_unit_float(name: str, value: int | float | None, *, int_minimum: int = 1) -> None:
     if value is None:
         return
     if isinstance(value, bool):
@@ -60,9 +40,6 @@ def _validate_int_or_unit_float(
 
 
 def _validate_positive_int(name: str, value: int | None) -> None:
-    """
-    Validate that an integer hyperparameter is a positive, non-bool int.
-    """
     if value is not None:
         if isinstance(value, bool):
             raise TypeError(f"{name} must be an integer, not bool.")
@@ -86,48 +63,6 @@ def build_random_forest(
     n_jobs: int = -1,
     **kwargs: Any,
 ) -> RandomForestClassifier:
-    """
-    Build a configured Random Forest classifier.
-
-    Parameters
-    ----------
-    n_estimators : int
-        Number of trees. Must be > 0.
-    criterion : str
-        Split quality criterion. One of {'gini', 'entropy', 'log_loss'}.
-    max_depth : int | None
-        Maximum tree depth. Must be > 0 if given.
-    min_samples_split : int | float
-        Minimum samples required to split a node. Int >= 2, or a float
-        fraction in (0.0, 1.0].
-    min_samples_leaf : int | float
-        Minimum samples required in a leaf node. Int >= 1, or a float
-        fraction in (0.0, 1.0].
-    max_features : str | int | float | None
-        Number of features considered at each split. String option,
-        int >= 1, float in (0.0, 1.0], or None (use all features).
-    bootstrap : bool
-        Whether bootstrap sampling is used. Must be True if `oob_score`
-        is requested via kwargs.
-    class_weight : str | dict | None
-        Class weighting strategy.
-    random_state : int
-        Random seed for reproducibility.
-    n_jobs : int
-        Number of CPU cores.
-
-    Returns
-    -------
-    RandomForestClassifier
-        Untrained classifier.
-
-    Raises
-    ------
-    ModelFactoryError
-        If hyperparameters are invalid or inconsistent (wraps both
-        value and type errors so callers, e.g. ModelFactory, can catch
-        a single exception type).
-    """
     try:
         _validate_positive_int("n_estimators", n_estimators)
         if max_depth is not None:
@@ -136,9 +71,7 @@ def build_random_forest(
         _validate_int_or_unit_float("min_samples_leaf", min_samples_leaf, int_minimum=1)
 
         if criterion not in _VALID_CRITERIA:
-            raise ValueError(
-                f"criterion must be one of {sorted(_VALID_CRITERIA)}, got {criterion!r}."
-            )
+            raise ValueError(f"criterion must be one of {sorted(_VALID_CRITERIA)}, got {criterion!r}.")
 
         if isinstance(max_features, bool):
             raise TypeError("max_features must be a str, int, float, or None, not bool.")
@@ -164,4 +97,4 @@ def build_random_forest(
         random_state=random_state,
         n_jobs=n_jobs,
         **kwargs,
-    ) 
+    )
