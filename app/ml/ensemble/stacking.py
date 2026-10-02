@@ -16,13 +16,9 @@ from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.utils.validation import check_is_fitted
 
-from app.ml.ensemble._common import (
-    fraud_probability,
-    validate_models,
-    validate_threshold,
-)
-
 __all__ = ["StackingEnsemble"]
+
+_POSITIVE_CLASS = 1
 
 
 class StackingEnsemble:
@@ -59,8 +55,22 @@ class StackingEnsemble:
         threshold: float = 0.5,
         meta_model: Any | None = None,
     ) -> None:
-        self.models = validate_models(models)
-        self.threshold = validate_threshold(threshold)
+        if not models:
+            raise ValueError("At least one base model is required.")
+
+        for name, model in models.items():
+            if not callable(getattr(model, "predict_proba", None)):
+                raise TypeError(f"Model '{name}' must implement predict_proba().")
+
+        if (
+            isinstance(threshold, bool)
+            or not isinstance(threshold, (int, float))
+            or not 0.0 <= threshold <= 1.0
+        ):
+            raise ValueError("threshold must be a number between 0 and 1.")
+
+        self.models = dict(models)
+        self.threshold = float(threshold)
         self._names = tuple(self.models)
 
         self.meta_model = (
@@ -80,9 +90,34 @@ class StackingEnsemble:
 
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _fraud_probability(name: str, model: Any, X) -> np.ndarray:
+        """Class-1 probabilities from one model, validated."""
+        proba = np.asarray(model.predict_proba(X))
+        if proba.ndim != 2 or proba.shape[1] < 2:
+            raise ValueError(
+                f"Model '{name}': predict_proba() must return shape (n, >=2)."
+            )
+
+        column = _POSITIVE_CLASS
+        classes = getattr(model, "classes_", None)
+        if classes is not None:
+            hits = np.flatnonzero(np.asarray(classes) == _POSITIVE_CLASS)
+            if hits.size != 1:
+                raise ValueError(
+                    f"Model '{name}' was not trained with positive class "
+                    f"{_POSITIVE_CLASS} (classes_={list(classes)})."
+                )
+            column = int(hits[0])
+
+        fraud = proba[:, column].astype(float, copy=False)
+        if not np.isfinite(fraud).all():
+            raise ValueError(f"Model '{name}' returned NaN/inf probabilities.")
+        return fraud
+
     def _base_matrix(self, X) -> np.ndarray:
         """Run each base model once -> array of shape (n_samples, n_models)."""
-        columns = [fraud_probability(n, self.models[n], X) for n in self._names]
+        columns = [self._fraud_probability(n, self.models[n], X) for n in self._names]
         if len({c.shape[0] for c in columns}) != 1:
             raise ValueError("Base models returned different numbers of predictions.")
         return np.column_stack(columns)
@@ -90,7 +125,7 @@ class StackingEnsemble:
     def _meta_proba(self, base_matrix: np.ndarray) -> np.ndarray:
         if self.meta_model_ is None:
             raise RuntimeError("StackingEnsemble must be fitted before prediction.")
-        return fraud_probability("meta_model", self.meta_model_, base_matrix)
+        return self._fraud_probability("meta_model", self.meta_model_, base_matrix)
 
     # ------------------------------------------------------------------
 

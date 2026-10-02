@@ -8,7 +8,6 @@ Weighted soft-voting over already-trained binary classifiers.
 
 from __future__ import annotations
 
-import math
 from typing import Any, Mapping
 
 import numpy as np
@@ -51,7 +50,7 @@ class VotingEnsemble:
         ):
             raise ValueError("threshold must be a number between 0 and 1.")
 
-        self.models = dict(models)  # shallow copy: caller can't add/remove models later
+        self.models = dict(models)
         self.threshold = float(threshold)
         self._names = tuple(self.models)
 
@@ -70,8 +69,6 @@ class VotingEnsemble:
 
         self._weights = raw / raw.sum()
 
-    # ------------------------------------------------------------------
-
     @property
     def weights(self) -> dict[str, float]:
         """Normalized weights (sum to 1)."""
@@ -86,8 +83,6 @@ class VotingEnsemble:
                 f"Model '{name}': predict_proba() must return shape (n, >=2)."
             )
 
-        # Locate the fraud column via classes_ rather than assuming
-        # column 1; fall back to column 1 for estimators without it.
         column = _POSITIVE_CLASS
         classes = getattr(model, "classes_", None)
         if classes is not None:
@@ -111,11 +106,13 @@ class VotingEnsemble:
             raise ValueError("Models returned different numbers of predictions.")
         return np.vstack(rows)
 
-    # ------------------------------------------------------------------
+    def _combine(self, matrix: np.ndarray) -> np.ndarray:
+        """Collapse (n_models, n_samples) into (n_samples,). Override to change the rule."""
+        return self._weights @ matrix
 
     def predict_proba(self, X) -> np.ndarray:
         """Weighted ensemble fraud probability per transaction."""
-        return self._weights @ self._model_matrix(X)
+        return self._combine(self._model_matrix(X))
 
     def predict(self, X) -> np.ndarray:
         """Binary prediction: 0 = legitimate, 1 = fraud."""
@@ -124,7 +121,7 @@ class VotingEnsemble:
     def predict_with_details(self, X) -> dict[str, Any]:
         """Ensemble output plus per-model probabilities (one inference pass)."""
         matrix = self._model_matrix(X)
-        ensemble = self._weights @ matrix
+        ensemble = self._combine(matrix)
 
         return {
             "model_probabilities": dict(zip(self._names, matrix)),
@@ -134,4 +131,3 @@ class VotingEnsemble:
             "weights": self.weights,
             "threshold": self.threshold,
         }
-    

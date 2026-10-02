@@ -1,0 +1,68 @@
+{
+  "phase": 10,
+  "component": "ensemble_evaluation",
+  "status": "PASS",
+  "timestamp_utc": "2026-10-02T17:17:48.520683+00:00",
+  "dataset": {
+    "test_rows": 1272524,
+    "features": 66
+  },
+  "base_models": [
+    "random_forest",
+    "xgboost",
+    "lightgbm"
+  ],
+  "evaluated_components": [
+    "random_forest",
+    "xgboost",
+    "lightgbm",
+    "voting",
+    "stacking",
+    "fusion_weighted_average",
+    "fusion_max"
+  ],
+  "metrics": {
+    "random_forest": {
+      "precision": 1.0,
+      "recall": 0.999529854254819,
+      "f1": 0.999764871855161,
+      "pr_auc": 1.0
+    },
+    "xgboost": {
+      "precision": 1.0,
+      "recall": 0.9983544898918665,
+      "f1": 0.9991765674626515,
+      "pr_auc": 0.9996493321898027
+    },
+    "lightgbm": {
+      "precision": 1.0,
+      "recall": 0.999529854254819,
+      "f1": 0.999764871855161,
+      "pr_auc": 0.9999888869593531
+    },
+    "voting": {
+      "precision": 1.0,
+      "recall": 0.999529854254819,
+      "f1": 0.999764871855161,
+      "pr_auc": 1.0
+    },
+    "stacking": {
+      "precision": 1.0,
+      "recall": 0.998589562764457,
+      "f1": 0.9992942836979535,
+      "pr_auc": 1.0
+    },
+    "fusion_weighted_average": {
+      "precision": 1.0,
+      "recall": 0.999529854254819,
+      "f1": 0.999764871855161,
+      "pr_auc": 1.0
+    },
+    "fusion_max": {
+      "precision": 1.0,
+      "recall": 0.999529854254819,
+      "f1": 0.999764871855161,
+      "pr_auc": 1.0
+    }
+  }
+}
