@@ -1,0 +1,34 @@
+{
+  "phase": 10,
+  "component": "stacking_ensemble",
+  "status": "PASS",
+  "base_models": [
+    "random_forest",
+    "xgboost",
+    "lightgbm"
+  ],
+  "dataset": {
+    "training_rows": 5090096,
+    "validation_rows": 1018020,
+    "test_rows": 1272524,
+    "features": 66
+  },
+  "evaluation": {
+    "precision": 1.0,
+    "recall": 0.998589562764457,
+    "f1": 0.9992942836979535,
+    "pr_auc": 1.0
+  },
+  "leakage_control": {
+    "meta_model_fitted_on_validation_data": true,
+    "final_test_set_untouched_during_meta_model_fitting": true
+  },
+  "verification": {
+    "probability_shape": [
+      1272524
+    ],
+    "prediction_shape": [
+      1272524
+    ]
+  }
+}
